@@ -5,6 +5,7 @@ import datetime
 import matplotlib.pyplot as plt
 from sklearn.datasets import load_iris
 from sklearn.neighbors import KNeighborsClassifier
+from progressbar import ProgressBar, Bar, Percentage, ETA, FileTransferSpeed
 
 warnings.filterwarnings("ignore")
 
@@ -25,16 +26,8 @@ original_categories = ['TEAM','DATE','MATCHUP','W/L','MIN','PTS','FGM','FGA','FG
 input_categories    = ['PTS Avg.', 'FGM Avg.', 'FGA Avg.', 'FG% Avg.', '3PM Avg.', '3PA Avg.', '3P% Avg.', 'FTM Avg.', 'FTA Avg.', 'FT% Avg.', 'OREB Avg.', 'DREB Avg.', 'REB Avg.', 'AST Avg.', 'STL Avg.', 'BLK Avg.', 'TOV Avg.', 'PF Avg.', '+/- Avg.', 'Opp. PTS Avg.', 'Opp. FGM Avg.', 'Opp. FGA Avg.', 'Opp. FG% Avg.', 'Opp. 3PM Avg.', 'Opp. 3PA Avg.', 'Opp. 3P% Avg.', 'Opp. FTM Avg.', 'Opp. FTA Avg.', 'Opp. FT% Avg.', 'Opp. OREB Avg.', 'Opp. DREB Avg.', 'Opp. REB Avg.', 'Opp. AST Avg.', 'Opp. STL Avg.', 'Opp. BLK Avg.', 'Opp. TOV Avg.', 'Opp. PF Avg.', 'Opp. +/- Avg.']
 
 def main():
-    print('Start -', datetime.datetime.today().strftime('%H:%M'))
-
     # get data
     nba = nba2017
-    wins   = getWins(nba)
-    losses = getLosses(nba)
-    home   = getHome(nba)
-    away   = getAway(nba)
-
-
 
     # # ----------------------------- Testing ------------------------------ #
     # for team_num in range(len(teams_str)):
@@ -69,26 +62,28 @@ def main():
     numpy.random.seed(1)
     # random_weight = numpy.random.random((len(training_inputs[0]), 1))
     # syn_weights = 2 * random_weight - 1
-    last_weights = [[7683.399507585997],[-66443.60224802225],[293148.50313937373],[-202452.815128047],[126681.23197837916],[-184170.11068387603],[59058.670369878935],[13889.403922933603],[-131875.0533879972],[58758.088722415356],[10121.254269808469],[-8297.726684581818],[1822.7276606417522],[306321.101603198],[639429.0206969369],[504387.07367546303],[-136738.79361599727],[-193173.40717093335],[-111659.01319420538],[-143726.66547826576],[-323443.58400685847],[295021.4618351999],[-507663.76484205754],[381457.9531109408],[-204752.0169497658],[-133945.3051220162],[121703.9109453824],[-135815.89451217142],[26089.806645200682],[-155080.4225925301],[-59251.94657653645],[-214332.47991109954],[640587.6878871459],[-275205.18770093424],[293784.70294994814],[-201928.32087004022],[513098.03405629017],[-167804.74932329025]]
+    last_weights = numpy.array([numpy.array([7683.399507585997,-66443.60224802225,293148.50313937373,-202452.815128047,126681.23197837916,-184170.11068387603,59058.670369878935,13889.403922933603,-131875.0533879972,58758.088722415356,10121.254269808469,-8297.726684581818,1822.7276606417522,306321.101603198,639429.0206969369,504387.07367546303,-136738.79361599727,-193173.40717093335,-111659.01319420538,-143726.66547826576,-323443.58400685847,295021.4618351999,-507663.76484205754,381457.9531109408,-204752.0169497658,-133945.3051220162,121703.9109453824,-135815.89451217142,26089.806645200682,-155080.4225925301,-59251.94657653645,-214332.47991109954,640587.6878871459,-275205.18770093424,293784.70294994814,-201928.32087004022,513098.03405629017,-167804.74932329025])]).T
     syn_weights = numpy.array(last_weights)
+
 
     THOUSAND = 10**5
     MILLION = 10**6
-    for i in range(0, 10*MILLION):
-        if (i%MILLION == 0 and i != 0):
-            print(i, '-', datetime.datetime.today().strftime('%H:%M'))
+    widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
+    range_val = 5*MILLION
+    progress_bar = ProgressBar(widgets=widgets, maxval=range_val)
+    progress_bar.start()
+    for i in range(0, range_val):
         input_layer = training_inputs
         outputs = sigmoid(numpy.dot(input_layer, syn_weights))
         error = training_outputs - outputs
         adjustments = error * sigmoid_derivative(outputs)
         syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
+        progress_bar.update(i)
+    progress_bar.finish()
     
     # --------------------------- Check Output --------------------------- #
-    print(syn_weights)
-
-    print('\n\nAccuracy: ' + getAccuracyPercentage(outputs, training_outputs) + '%\n\n')
-    print('End -', datetime.datetime.today().strftime('%H:%M'))
-
+    print('\n', syn_weights, '\n\n')
+    print('Accuracy: ' + getAccuracyPercentage(outputs, training_outputs) + '%\n\n')
 
 # Activation Functions
 def sigmoid(x):
