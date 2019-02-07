@@ -45,7 +45,7 @@ def main():
     
     # ----------------------------- Training ----------------------------- #
     # team data
-    team_num = 0
+    team_num = 1
     team = getTeamGames(nba, teams_str[team_num])
     team = addDefensiveStats(team)
     team = addStatAverages(team)
@@ -62,24 +62,43 @@ def main():
     numpy.random.seed(1)
     # random_weight = numpy.random.random((len(training_inputs[0]), 1))
     # syn_weights = 2 * random_weight - 1
-    last_weights = numpy.array([numpy.array([40393.79250103115,-79590.11920196167,301956.15317814396,-227190.37402050896,172995.31569800264,-234335.89865285586,68310.31500446529,26578.747114069043,-168799.57050494233,66411.34070433657,90698.95316823847,-71306.61294013534,19391.540301454337,306011.64506267203,676542.5827454855,733479.7719961171,-121213.42204739377,-292636.7955895357,-104411.12112703611,-121461.08353668456,-358220.04683407646,324977.9574625783,-584036.8923215878,450755.9301192433,-251556.3806362828,-138879.294104372,144224.4415701032,-137383.05138794167,21996.180422344147,-189005.63331702823,-4786.0698291877125,-193791.81388950086,689261.074905717,-412790.95402400004,256518.41246680942,-206588.68472897273,400892.6135578125,-201938.09094085536])]).T
+    last_weights = numpy.array([numpy.array([23371.88464160924,-13878.24190963965,214534.77546519839,17742.61584407996,-66135.12843802734,-185836.21289335235,10807.577430756754,117263.52880515717,-100332.65693185542,53459.90067601764,-266911.1107043446,136521.51769903756,-130390.39291070735,-91616.7731159402,168462.232161062,288122.54512536695,-9298.43086765442,-68688.85549073885,5368.6845927585455,49234.77459256777,-176800.78370290797,2417.390052969761,-102175.10007654007,337233.52956242504,-131540.55809454058,-34353.232994337566,65604.17390324608,-184184.44652379505,-42859.66144719881,-39105.950885103826,46258.74753689629,7152.685902289468,-29991.706447280936,174072.95475833616,281878.30370041775,-192425.4923265646,-5021.548590941986,-229233.09411575636])]).T
     syn_weights = numpy.array(last_weights)
 
 
     THOUSAND = 10**5
     MILLION = 10**6
     widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
-    range_val = 5*MILLION
-    progress_bar = ProgressBar(widgets=widgets, maxval=range_val)
-    progress_bar.start()
-    for i in range(0, range_val):
-        input_layer = training_inputs
-        outputs = sigmoid(numpy.dot(input_layer, syn_weights))
-        error = training_outputs - outputs
-        adjustments = error * sigmoid_derivative(outputs)
-        syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
-        progress_bar.update(i)
-    progress_bar.finish()
+    range_val = 10*THOUSAND
+    more = True
+    while (more):
+        progress_bar = ProgressBar(widgets=widgets, maxval=range_val)
+        progress_bar.start()
+
+        for i in range(range_val):
+            input_layer = training_inputs
+            outputs = sigmoid(numpy.dot(input_layer, syn_weights))
+            error = training_outputs - outputs
+            adjustments = error * sigmoid_derivative(outputs)
+            syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
+            progress_bar.update(i)
+
+        progress_bar.finish()
+        print('Accuracy: ' + getAccuracyPercentage(outputs, training_outputs) + '%\n')
+        m = input('Would you like to run another loop? (y/n) ')
+        if m.lower() == 'n' or m.lower() == 'no':
+            more = False
+        
+    
+    # for i in range(range_val):
+    #     input_layer = training_inputs
+    #     outputs = sigmoid(numpy.dot(input_layer, syn_weights))
+    #     error = training_outputs - outputs
+    #     adjustments = error * sigmoid_derivative(outputs)
+    #     syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
+    #     progress_bar.update(i)
+    # progress_bar.finish()
+
     
     # --------------------------- Check Output --------------------------- #
     print('\n', syn_weights, '\n\n')
