@@ -10,7 +10,7 @@ from progressbar import ProgressBar, Bar, Percentage, ETA, FileTransferSpeed
 warnings.filterwarnings("ignore")
 
 # string translation
-win_loss_str  = ['L', 'W']
+win_loss_str  = ['W', 'L']
 win_loss_val  = [ 0 ,  1 ]
 home_away_str = ['Home', 'Away']
 home_away_val = [   0  ,    1  ]
@@ -25,9 +25,15 @@ weights = pandas.read_csv('Data/weights.csv')
 original_categories = ['TEAM','DATE','MATCHUP','W/L','MIN','PTS','FGM','FGA','FG%','3PM','3PA','3P%','FTM','FTA','FT%','OREB','DREB','REB','AST','STL','BLK','TOV','PF','+/-']
 input_categories    = ['PTS Avg.', 'FGM Avg.', 'FGA Avg.', 'FG% Avg.', '3PM Avg.', '3PA Avg.', '3P% Avg.', 'FTM Avg.', 'FTA Avg.', 'FT% Avg.', 'OREB Avg.', 'DREB Avg.', 'REB Avg.', 'AST Avg.', 'STL Avg.', 'BLK Avg.', 'TOV Avg.', 'PF Avg.', '+/- Avg.', 'Opp. PTS Avg.', 'Opp. FGM Avg.', 'Opp. FGA Avg.', 'Opp. FG% Avg.', 'Opp. 3PM Avg.', 'Opp. 3PA Avg.', 'Opp. 3P% Avg.', 'Opp. FTM Avg.', 'Opp. FTA Avg.', 'Opp. FT% Avg.', 'Opp. OREB Avg.', 'Opp. DREB Avg.', 'Opp. REB Avg.', 'Opp. AST Avg.', 'Opp. STL Avg.', 'Opp. BLK Avg.', 'Opp. TOV Avg.', 'Opp. PF Avg.', 'Opp. +/- Avg.']
 
+# constants
+THOUSAND = 10**3
+MILLION = 10**6
+
 def main():
     # get data
     nba = nba2017
+
+
 
     # # ----------------------------- Testing ------------------------------ #
     # for team_num in range(len(teams_str)):
@@ -45,7 +51,7 @@ def main():
     
     # ----------------------------- Training ----------------------------- #
     # team data
-    team_num = 1
+    team_num = 3
     team = getTeamGames(nba, teams_str[team_num])
     team = addDefensiveStats(team)
     team = addStatAverages(team)
@@ -60,42 +66,71 @@ def main():
     training_outputs = numpy.array(training_outputs).T
 
     numpy.random.seed(1)
-    # random_weight = numpy.random.random((len(training_inputs[0]), 1))
-    # syn_weights = 2 * random_weight - 1
-    last_weights = numpy.array([numpy.array([-5404.17872436476,-39849.14578266585,179217.84928739045,-76391.20843373671,-201665.0474077279,-191012.33049797133,-27232.349784279882,275959.19212869124,-151366.89358171483,-11415.944144158257,-357243.39513648144,249198.5941378381,-108045.60085196274,-75642.61271762248,-198625.15753031045,149066.26980639546,109773.93303128958,-46541.99090351532,102765.31175296562,225295.9310936378,-47345.85945902098,-225609.08596344615,54187.51963199398,337434.3020758686,-158991.96321957003,-32838.4167773632,-17445.29056694459,-312820.40807435336,22780.664648657905,23158.945604609875,155114.71319547071,178273.5480563957,-197435.22107187237,313606.30828798393,381391.25887313,-66098.98055949701,-483073.9393641688,-242262.15312930272])]).T
-    syn_weights = numpy.array(last_weights)
+    random_weight = numpy.random.random((len(training_inputs[0]), 1))
+    syn_weights = 2 * random_weight - 1
+    last_weights = numpy.array([numpy.array([487562.27382121776,-184240.30894955387,-620812.5878834525,-477246.4795795577,197238.11262495082,-85098.47307518324,-43074.69464663881,658804.810767647,-453229.11675516336,-262012.8135326605,379740.64419553406,-284607.0528064795,95132.79150466964,195244.61413523505,1160918.016711736,-307954.7094678382,-104447.11675371887,451703.6268669787,-89919.26655263749,357749.0503220181,-16477.50227554932,367780.2911298117,-792261.9318905178,233451.39433303758,-496679.95708932576,-43660.669255827495,157254.0221447926,-40771.92403723044,-21114.418540193026,-914117.4909215842,833781.554292566,-80336.04723500759,-336082.7275695222,-209257.46063896792,-334903.0998459643,441972.0518097461,149207.80760557402,-333795.39166182873])]).T
 
-
-    THOUSAND = 10**5
-    MILLION = 10**6
     widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
     range_val = MILLION
-    more = True
-    while (more):
-        progress_bar = ProgressBar(widgets=widgets, maxval=range_val)
-        progress_bar.start()
 
-        for i in range(range_val):
-            input_layer = training_inputs
-            outputs = sigmoid(numpy.dot(input_layer, syn_weights))
-            error = training_outputs - outputs
-            adjustments = error * sigmoid_derivative(outputs)
-            syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
-            progress_bar.update(i)
+    new_weights = trainTeam(training_inputs, training_outputs, last_weights)
 
-        progress_bar.finish()
-        print('Accuracy: ' + getAccuracyPercentage(outputs, training_outputs) + '%\n')
-        m = input('Would you like to run another loop? (y/n) ')
-        if m.lower() == 'n' or m.lower() == 'no':
-            more = False
+    # train according to accuracy
+    # while(accuracy <= 85):
+    #     input_layer = training_inputs
+    #     outputs = sigmoid(numpy.dot(input_layer, syn_weights))
+    #     error = training_outputs - outputs
+    #     adjustments = error * sigmoid_prime(outputs)
+    #     syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
+    #     accuracy = float(getAccuracyPercentage(outputs, training_outputs))
+    #     iterations = iterations + 1
     
+    # train according to x iterations
+    # while (more):
+        # progress_bar = ProgressBar(widgets=widgets, maxval=range_val)
+        # progress_bar.start()
+        # for i in range(range_val):
+        #     input_layer = training_inputs
+        #     outputs = sigmoid(numpy.dot(input_layer, syn_weights))
+        #     error = training_outputs - outputs
+        #     adjustments = error * sigmoid_prime(outputs)
+        #     syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
+        #     progress_bar.update(i)
+        # progress_bar.finish()
+        # print('Accuracy: ' + getAccuracyPercentage(outputs, training_outputs) + '%\n')
+        # m = input('Would you like to run another loop? (y/n) ')
+        # if m.lower() == 'n' or m.lower() == 'no':
+        #     more = False
+
+
+
     # ------------------------------ Output ------------------------------ #
-    print('\n', syn_weights, '\n\n')
+    # print('\n', syn_weights, '\n\n')
+    print('\n', new_weights, '\n\n')
+    # print('Accuracy: ' + getAccuracyPercentage(outputs, training_outputs) + '%\n')
+    # print(iterations)
+
+
+def trainTeam(training_inputs, training_outputs, weights, acceptable_accuracy=85):
+    accuracy = 0
+    iterations = 0
+    syn_weights = weights
+    while(accuracy < acceptable_accuracy):
+        input_layer = training_inputs
+        outputs = sigmoid(numpy.dot(input_layer, syn_weights))
+        error = training_outputs - outputs
+        adjustments = error * sigmoid_prime(outputs)
+        syn_weights = syn_weights + numpy.dot(input_layer.T, adjustments)
+        accuracy = float(getAccuracyPercentage(outputs, training_outputs))
+        iterations = iterations + 1
+    print('Accuracy: ' + getAccuracyPercentage(outputs, training_outputs) + '%\n')
+    print(iterations)
+    return syn_weights
 
 # Activation Functions
 def sigmoid(x):
     return 1 / (1 + numpy.exp(-(x.astype(float))))
-def sigmoid_derivative(x):
+def sigmoid_prime(x):
     return sigmoid(x.astype(float)) * (1 - sigmoid(x.astype(float)))
     # return x.astype(float) * (1 - x.astype(float))
 
