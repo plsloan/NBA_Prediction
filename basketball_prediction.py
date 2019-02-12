@@ -51,7 +51,7 @@ def main():
     
     # ----------------------------- Training ----------------------------- #
     # team data
-    team_num = 3
+    team_num = 29
     team = getTeamGames(nba, teams_str[team_num])
     team = addDefensiveStats(team)
     team = addStatAverages(team)
