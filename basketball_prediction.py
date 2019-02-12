@@ -51,7 +51,7 @@ def main():
     
     # ----------------------------- Training ----------------------------- #
     # team data
-    team_num = 29
+    team_num = 24
     team = getTeamGames(nba, teams_str[team_num])
     team = addDefensiveStats(team)
     team = addStatAverages(team)
@@ -132,7 +132,8 @@ def sigmoid(x):
     return 1 / (1 + numpy.exp(-(x.astype(float))))
 def sigmoid_prime(x):
     return sigmoid(x.astype(float)) * (1 - sigmoid(x.astype(float)))
-    # return x.astype(float) * (1 - x.astype(float))
+def sigmoid_derivative(x):
+    return x.astype(float) * (1 - x.astype(float))
 
 # populate data
 def addDefensiveStats(data):
