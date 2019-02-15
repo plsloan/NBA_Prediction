@@ -1,5 +1,6 @@
 import numpy
 import pandas
+import basketball_reference_scraper
 import warnings
 import datetime
 import matplotlib.pyplot as plt
