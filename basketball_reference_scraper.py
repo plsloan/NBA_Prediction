@@ -62,18 +62,20 @@ def get_game_stats(team_str_fun, year=2019):
     table = html_soup.find('table', id='games')
     body = table.find('tbody')
     rows = body.find_all('tr')
-    stat_dict = {   'min': [], 'pts': [], 
+    stat_dict = {   'team':[], 'date':[], 'matchup':[],
+                    'w/l': [], 'min': [], 'pts':[], 
                     'fgm': [], 'fga': [], 'fgp':[], 
-                    'ftm': [], 'fta': [], 'ftp':[], 
                     '3pm': [], '3pa': [], '3pp':[], 
+                    'ftm': [], 'fta': [], 'ftp':[], 
                     'oreb':[], 'dreb':[], 'reb':[],
                     'ast': [], 'stl': [], 'blk':[],
-                    'tov': [], 'pf' : [], 'pm': []      }
+                    'tov': [], 'pf' : [], '+/-':[]      }
     for row in rows:
         row_id = row.find('th').text
         row_data = row.find_all('td')   # date[0], box_score[2], home_away[3], opponent[4], win_loss[5], team_points[6], opp_points[7]
         if len(row_data) > 0 and datetime.now() > datetime.strptime(row_data[0].text[5:], '%b %d, %Y'):
-            date = row_data[0].text
+            year, month, day = parse_date(row_data[0].text)
+            date = str(month) + '/' + str(day) + '/' + str(year)
             box_score_url = 'https://www.basketball-reference.com' + row_data[3].find('a')['href']
             home_away = row_data[4].text
             opponent = row_data[5].text
@@ -85,6 +87,12 @@ def get_game_stats(team_str_fun, year=2019):
                 matchup = team_str_fun + ' vs. ' + opp_str
             else:                   # away
                 matchup = team_str_fun +  ' @ '  + opp_str
+            stat_dict['team'].append(team_str_fun)
+            stat_dict['date'].append(date)
+            stat_dict['matchup'].append(matchup)
+            stat_dict['w/l'].append(win_loss)
+            stat_dict['pts'].append(team_points)
+            stat_dict['+/-'].append(int(team_points) - int(opp_points))
             res = get(box_score_url, headers={"User-Agent":"Mozilla/5.0"})
             html_soup = BeautifulSoup(res.text, 'lxml')
             if team_str_fun == 'CHA':
@@ -107,7 +115,26 @@ def get_game_stats(team_str_fun, year=2019):
                 opp_table  = html_soup.find('table', id='box_' + opp_str.lower() + '_basic')
             opp_stats = opp_table.find('tfoot').find('tr')
             opp_data = opp_stats.find_all('td')
-            print(team_points, opp_points, win_loss)
+            stat_dict['min'].append(team_data[0].text)
+            stat_dict['fgm'].append(team_data[1].text)
+            stat_dict['fga'].append(team_data[2].text)
+            stat_dict['fgp'].append(team_data[3].text)
+            stat_dict['3pm'].append(team_data[4].text)
+            stat_dict['3pa'].append(team_data[5].text)
+            stat_dict['3pp'].append(team_data[6].text)            
+            stat_dict['ftm'].append(team_data[7].text)
+            stat_dict['fta'].append(team_data[8].text)
+            stat_dict['ftp'].append(team_data[9].text)
+            stat_dict['oreb'].append(team_data[10].text)
+            stat_dict['dreb'].append(team_data[11].text)
+            stat_dict['reb'].append(team_data[12].text)
+            stat_dict['ast'].append(team_data[13].text)
+            stat_dict['stl'].append(team_data[14].text)
+            stat_dict['blk'].append(team_data[15].text)
+            stat_dict['tov'].append(team_data[16].text)
+            stat_dict['pf'].append(team_data[17].text)
+
+            stat_dict = {  'oreb':[], 'dreb':[], 'reb':[],'ast': [], 'stl': [], 'blk':[],'tov': [], 'pf' : []}
             
 
 def parse_date(str_date):
