@@ -5,11 +5,13 @@ from datetime import datetime
 from bs4 import BeautifulSoup, Comment
 from progressbar import ProgressBar, Bar, Percentage, ETA, FileTransferSpeed
 
-teams_str = ['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW', 'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK', 'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS']
-teams_val = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  ,   9  ,   10 ,   11 ,   12 ,   13 ,   14 ,   15 ,   16 ,   17 ,   18 ,   19 ,   20 ,   21 ,   22 ,   23 ,   24 ,   25 ,   26 ,   27 ,   28 ,   29 ]
+teams_str   = ['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW', 'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK', 'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS']
+teams_val   = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  ,   9  ,   10 ,   11 ,   12 ,   13 ,   14 ,   15 ,   16 ,   17 ,   18 ,   19 ,   20 ,   21 ,   22 ,   23 ,   24 ,   25 ,   26 ,   27 ,   28 ,   29 ]
+games_today = []
 
 def main():
-    season_years = '2018-2019'
+    print()
+    season_years = '2017-2018'
     league_stats = {}
     temp_dict = {}
     df = pandas.DataFrame()
@@ -17,7 +19,6 @@ def main():
     progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
     progress_bar.start()
     for team_num in teams_val:
-        progress_bar.update(team_num)
         season_stats = get_season_stats(teams_str[team_num], year=season_years)
         game_stats = get_game_stats(teams_str[team_num], year=season_years)
         league_stats[teams_str[team_num]] = {'season_stats':season_stats, 'game_stats':game_stats}
@@ -26,7 +27,9 @@ def main():
                 temp_dict[key] = temp_dict[key] + league_stats[teams_str[team_num]]['game_stats'][key]
             else:
                 temp_dict[key] = league_stats[teams_str[team_num]]['game_stats'][key]
+        progress_bar.update(team_num + 1)
     progress_bar.finish()
+    print()
     for key in temp_dict.keys():
         df[key.upper()] = temp_dict[key]
     df = df.iloc[pandas.to_datetime(df.DATE).values.argsort()]  # sort
@@ -34,6 +37,8 @@ def main():
     with open('Data/NBA_' + season_years + '_Data.csv', 'w') as filetowrite:
         filetowrite.write(csv_content)
         filetowrite.close()
+    print('These teams have games today...')
+    print(games_today)
 
 def get_season_stats(team_str_fun, year='2018-2019'):
     year = year[-4:]
@@ -162,7 +167,7 @@ def get_game_stats(team_str_fun, year='2018-2019'):
                 stat_dict['tov'].append(team_data[16].text)
                 stat_dict['pf'].append(team_data[17].text)   
             else:
-                print(team_str_fun, 'has a game today')
+                games_today.append(team_str_fun)
     return stat_dict      
 
 def parse_date(str_date):
