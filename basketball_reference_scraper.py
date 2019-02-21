@@ -3,6 +3,7 @@ import pandas
 from requests import get
 from datetime import datetime
 from bs4 import BeautifulSoup, Comment
+from progressbar import ProgressBar, Bar, Percentage, ETA, FileTransferSpeed
 
 teams_str = ['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW', 'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK', 'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS']
 teams_val = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  ,   9  ,   10 ,   11 ,   12 ,   13 ,   14 ,   15 ,   16 ,   17 ,   18 ,   19 ,   20 ,   21 ,   22 ,   23 ,   24 ,   25 ,   26 ,   27 ,   28 ,   29 ]
@@ -12,15 +13,20 @@ def main():
     league_stats = {}
     temp_dict = {}
     df = pandas.DataFrame()
-    for team_str in teams_str:
-        season_stats = get_season_stats(team_str, year=season_years)
-        game_stats = get_game_stats(team_str, year=season_years)
-        league_stats[team_str] = {'season_stats':season_stats, 'game_stats':game_stats}
+    widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
+    progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
+    progress_bar.start()
+    for team_num in teams_val:
+        progress_bar.update(team_num)
+        season_stats = get_season_stats(teams_str[team_num], year=season_years)
+        game_stats = get_game_stats(teams_str[team_num], year=season_years)
+        league_stats[teams_str[team_num]] = {'season_stats':season_stats, 'game_stats':game_stats}
         for key in game_stats.keys():
             if key in temp_dict.keys():
-                temp_dict[key] = temp_dict[key] + league_stats[team_str]['game_stats'][key]
+                temp_dict[key] = temp_dict[key] + league_stats[teams_str[team_num]]['game_stats'][key]
             else:
-                temp_dict[key] = league_stats[team_str]['game_stats'][key]
+                temp_dict[key] = league_stats[teams_str[team_num]]['game_stats'][key]
+    progress_bar.finish()
     for key in temp_dict.keys():
         df[key.upper()] = temp_dict[key]
     df = df.iloc[pandas.to_datetime(df.DATE).values.argsort()]  # sort
@@ -83,9 +89,9 @@ def get_game_stats(team_str_fun, year='2018-2019'):
     rows = body.find_all('tr')
     stat_dict = {   'team':[], 'date':[], 'matchup':[],
                     'w/l': [], 'min': [], 'pts':[], 
-                    'fgm': [], 'fga': [], 'fgp':[], 
-                    '3pm': [], '3pa': [], '3pp':[], 
-                    'ftm': [], 'fta': [], 'ftp':[], 
+                    'fgm': [], 'fga': [], 'fg%':[], 
+                    '3pm': [], '3pa': [], '3p%':[], 
+                    'ftm': [], 'fta': [], 'ft%':[], 
                     'oreb':[], 'dreb':[], 'reb':[],
                     'ast': [], 'stl': [], 'blk':[],
                     'tov': [], 'pf' : [], '+/-':[]      }
@@ -140,13 +146,13 @@ def get_game_stats(team_str_fun, year='2018-2019'):
                 stat_dict['min'].append(team_data[0].text)
                 stat_dict['fgm'].append(team_data[1].text)
                 stat_dict['fga'].append(team_data[2].text)
-                stat_dict['fgp'].append(team_data[3].text)
+                stat_dict['fg%'].append(team_data[3].text)
                 stat_dict['3pm'].append(team_data[4].text)
                 stat_dict['3pa'].append(team_data[5].text)
-                stat_dict['3pp'].append(team_data[6].text)            
+                stat_dict['3p%'].append(team_data[6].text)            
                 stat_dict['ftm'].append(team_data[7].text)
                 stat_dict['fta'].append(team_data[8].text)
-                stat_dict['ftp'].append(team_data[9].text)
+                stat_dict['ft%'].append(team_data[9].text)
                 stat_dict['oreb'].append(team_data[10].text)
                 stat_dict['dreb'].append(team_data[11].text)
                 stat_dict['reb'].append(team_data[12].text)
