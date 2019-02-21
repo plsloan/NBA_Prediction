@@ -1,41 +1,53 @@
+import numpy
 import pandas
 from requests import get
 from datetime import datetime
 from bs4 import BeautifulSoup, Comment
 
-
 teams_str = ['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'GSW', 'HOU', 'IND', 'LAC', 'LAL', 'MEM', 'MIA', 'MIL', 'MIN', 'NOP', 'NYK', 'OKC', 'ORL', 'PHI', 'PHX', 'POR', 'SAC', 'SAS', 'TOR', 'UTA', 'WAS']
 teams_val = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  ,   9  ,   10 ,   11 ,   12 ,   13 ,   14 ,   15 ,   16 ,   17 ,   18 ,   19 ,   20 ,   21 ,   22 ,   23 ,   24 ,   25 ,   26 ,   27 ,   28 ,   29 ]
 
 def main():
-    for team_num in teams_val:
-        print(team_num)
-        season_stats = get_season_stats(teams_str[team_num])
-        get_game_stats(teams_str[team_num])
-        print()
-    
+    season_years = '2018-2019'
+    league_stats = {}
+    temp_dict = {}
+    df = pandas.DataFrame()
+    for team_str in teams_str:
+        season_stats = get_season_stats(team_str, year=season_years)
+        game_stats = get_game_stats(team_str, year=season_years)
+        league_stats[team_str] = {'season_stats':season_stats, 'game_stats':game_stats}
+        for key in game_stats.keys():
+            if key in temp_dict.keys():
+                temp_dict[key] = temp_dict[key] + league_stats[team_str]['game_stats'][key]
+            else:
+                temp_dict[key] = league_stats[team_str]['game_stats'][key]
+    for key in temp_dict.keys():
+        df[key.upper()] = temp_dict[key]
+    df = df.iloc[pandas.to_datetime(df.DATE).values.argsort()]  # sort
+    # df.sort_values(['TEAM', 'DATE'], ascending=[False, True])
+    csv_content = df.to_csv(index=False)
+    with open('Data/NBA_' + season_years + '_Data.csv', 'w') as filetowrite:
+        filetowrite.write(csv_content)
+        filetowrite.close()
 
-def get_season_stats(team_str, year=2019):
-    year = str(year)
-    if team_str == 'CHA':
+def get_season_stats(team_str_fun, year='2018-2019'):
+    year = year[-4:]
+    if team_str_fun == 'CHA':
         url = 'https://www.basketball-reference.com/teams/' + 'CHO' + '/' + year + '.html'
-    elif team_str == 'BKN':
+    elif team_str_fun == 'BKN':
         url = 'https://www.basketball-reference.com/teams/' + 'BRK' + '/' + year + '.html'
-    elif team_str == 'PHX':
+    elif team_str_fun == 'PHX':
         url = 'https://www.basketball-reference.com/teams/' + 'PHO' + '/' + year + '.html'
     else:
-        url = 'https://www.basketball-reference.com/teams/' + team_str.upper() + '/' + year + '.html'
+        url = 'https://www.basketball-reference.com/teams/' + team_str_fun.upper() + '/' + year + '.html'
     res = get(url, headers={"User-Agent":"Mozilla/5.0"})
     html_soup = BeautifulSoup(res.text, 'lxml')
     table_rows = []
-    # if html_soup.find('table', id='games') == None:
     for comment in html_soup.find_all(string=lambda text:isinstance(text,Comment)):
         data = BeautifulSoup(comment,"lxml")
         for items in data.select("table#team_and_opponent tr"):
             tds = [item.get_text(strip=True) for item in items.select("th,td")]
             table_rows.append(tds)
-    # else:
-    #     table_rows = html_soup.find('table', id='games').find('tbody').find_all('tr')
     categories = table_rows[0][1:]
     totals = table_rows[1][1:]
     averages = table_rows[2][1:]
@@ -45,10 +57,18 @@ def get_season_stats(team_str, year=2019):
     opp_averages = table_rows[6][1:]
     opp_ranks = table_rows[7][1:]
     opp_year_to_year_change = table_rows[8][1:]
-    return_array = [categories, totals, averages, league_ranks, year_to_year_change, opp_totals, opp_averages, opp_ranks, opp_year_to_year_change]
-    return return_array
-def get_game_stats(team_str_fun, year=2019):
-    year = str(year)
+    return_dict = { 'categories':categories, 
+                    'totals':totals, 
+                    'averages':averages, 
+                    'league_ranks':league_ranks, 
+                    'year_to_year_change':year_to_year_change, 
+                    'opp_totals':opp_totals, 
+                    'opp_averages':opp_averages, 
+                    'opp_ranks':opp_ranks, 
+                    'opp_year_to_year_change':opp_year_to_year_change }
+    return return_dict
+def get_game_stats(team_str_fun, year='2018-2019'):
+    year = year[-4:]
     if team_str_fun == 'CHA':
         url = 'https://www.basketball-reference.com/teams/' + 'CHO' + '/' + year + '_games.html'
     elif team_str_fun == 'BKN':
@@ -75,6 +95,7 @@ def get_game_stats(team_str_fun, year=2019):
         row_data = row.find_all('td')   # date[0], box_score[2], home_away[3], opponent[4], win_loss[5], team_points[6], opp_points[7]
         if len(row_data) > 0 and datetime.now() > datetime.strptime(row_data[0].text[5:], '%b %d, %Y'):
             year, month, day = parse_date(row_data[0].text)
+            year = year[2:]
             date = str(month) + '/' + str(day) + '/' + str(year)
             box_score_url = 'https://www.basketball-reference.com' + row_data[3].find('a')['href']
             home_away = row_data[4].text
@@ -87,12 +108,8 @@ def get_game_stats(team_str_fun, year=2019):
                 matchup = team_str_fun + ' vs. ' + opp_str
             else:                   # away
                 matchup = team_str_fun +  ' @ '  + opp_str
-            stat_dict['team'].append(team_str_fun)
-            stat_dict['date'].append(date)
-            stat_dict['matchup'].append(matchup)
-            stat_dict['w/l'].append(win_loss)
-            stat_dict['pts'].append(team_points)
-            stat_dict['+/-'].append(int(team_points) - int(opp_points))
+            if team_points != '':
+                stat_dict['+/-'].append(int(team_points) - int(opp_points))
             res = get(box_score_url, headers={"User-Agent":"Mozilla/5.0"})
             html_soup = BeautifulSoup(res.text, 'lxml')
             if team_str_fun == 'CHA':
@@ -103,39 +120,45 @@ def get_game_stats(team_str_fun, year=2019):
                 team_table = html_soup.find('table', id='box_' + 'pho' + '_basic')
             else:
                 team_table = html_soup.find('table', id='box_' + team_str_fun.lower() + '_basic')
-            team_stats = team_table.find('tfoot').find('tr')
-            team_data  = team_stats.find_all('td')
-            if opp_str == 'CHA':
-                opp_table  = html_soup.find('table', id='box_' + 'cho' + '_basic')
-            elif opp_str == 'BKN':
-                opp_table  = html_soup.find('table', id='box_' + 'brk' + '_basic')
-            elif opp_str == 'PHX':
-                opp_table  = html_soup.find('table', id='box_' + 'pho' + '_basic')
+            if team_table:
+                team_stats = team_table.find('tfoot').find('tr')
+                team_data  = team_stats.find_all('td')
+                if opp_str == 'CHA':
+                    opp_table  = html_soup.find('table', id='box_' + 'cho' + '_basic')
+                elif opp_str == 'BKN':
+                    opp_table  = html_soup.find('table', id='box_' + 'brk' + '_basic')
+                elif opp_str == 'PHX':
+                    opp_table  = html_soup.find('table', id='box_' + 'pho' + '_basic')
+                else:
+                    opp_table  = html_soup.find('table', id='box_' + opp_str.lower() + '_basic')
+                opp_stats = opp_table.find('tfoot').find('tr')
+                opp_data = opp_stats.find_all('td')
+                stat_dict['team'].append(team_str_fun)
+                stat_dict['date'].append(date)
+                stat_dict['matchup'].append(matchup)
+                stat_dict['w/l'].append(win_loss)
+                stat_dict['pts'].append(team_points)
+                stat_dict['min'].append(team_data[0].text)
+                stat_dict['fgm'].append(team_data[1].text)
+                stat_dict['fga'].append(team_data[2].text)
+                stat_dict['fgp'].append(team_data[3].text)
+                stat_dict['3pm'].append(team_data[4].text)
+                stat_dict['3pa'].append(team_data[5].text)
+                stat_dict['3pp'].append(team_data[6].text)            
+                stat_dict['ftm'].append(team_data[7].text)
+                stat_dict['fta'].append(team_data[8].text)
+                stat_dict['ftp'].append(team_data[9].text)
+                stat_dict['oreb'].append(team_data[10].text)
+                stat_dict['dreb'].append(team_data[11].text)
+                stat_dict['reb'].append(team_data[12].text)
+                stat_dict['ast'].append(team_data[13].text)
+                stat_dict['stl'].append(team_data[14].text)
+                stat_dict['blk'].append(team_data[15].text)
+                stat_dict['tov'].append(team_data[16].text)
+                stat_dict['pf'].append(team_data[17].text)   
             else:
-                opp_table  = html_soup.find('table', id='box_' + opp_str.lower() + '_basic')
-            opp_stats = opp_table.find('tfoot').find('tr')
-            opp_data = opp_stats.find_all('td')
-            stat_dict['min'].append(team_data[0].text)
-            stat_dict['fgm'].append(team_data[1].text)
-            stat_dict['fga'].append(team_data[2].text)
-            stat_dict['fgp'].append(team_data[3].text)
-            stat_dict['3pm'].append(team_data[4].text)
-            stat_dict['3pa'].append(team_data[5].text)
-            stat_dict['3pp'].append(team_data[6].text)            
-            stat_dict['ftm'].append(team_data[7].text)
-            stat_dict['fta'].append(team_data[8].text)
-            stat_dict['ftp'].append(team_data[9].text)
-            stat_dict['oreb'].append(team_data[10].text)
-            stat_dict['dreb'].append(team_data[11].text)
-            stat_dict['reb'].append(team_data[12].text)
-            stat_dict['ast'].append(team_data[13].text)
-            stat_dict['stl'].append(team_data[14].text)
-            stat_dict['blk'].append(team_data[15].text)
-            stat_dict['tov'].append(team_data[16].text)
-            stat_dict['pf'].append(team_data[17].text)
-
-            stat_dict = {  'oreb':[], 'dreb':[], 'reb':[],'ast': [], 'stl': [], 'blk':[],'tov': [], 'pf' : []}
-            
+                print(team_str_fun, 'has a game today')
+    return stat_dict      
 
 def parse_date(str_date):
     split_date = str_date.split(',')[1:]
@@ -235,7 +258,5 @@ def get_opponent_str(opponent):
 if __name__ == '__main__':
     main()
 
-
-
-
-#print [item["data-bin"] for item in bs.find_all() if "data-bin" in item.attrs]
+# finds div with 'data-bin' attribute
+# print [tag["data-bin"] for tag in html_soup.find_all('div') if "data-bin" in tag.attrs]
