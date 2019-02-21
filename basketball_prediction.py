@@ -32,7 +32,7 @@ THOUSAND = 10**3
 MILLION = 10**6
 
 def main():
-    # # ------------------------------ Testing ------------------------------- #
+    # # ------------------------------ Testing - One Game ------------------------------- #
     # widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
     # progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
     # progress_bar.start()
@@ -46,62 +46,90 @@ def main():
     #     team = addDefensiveStats(team)
     #     team = addStatAverages(team)
 
-    #     testing_inputs = numpy.array([team[input_categories].iloc[70:81].values])
+    #     testing_inputs = numpy.array([team[input_categories].iloc[81].values])
     #     weight = weights[weights['team'] == teams_str[team_num]][input_categories].T
     #     output = sigmoid(numpy.dot(testing_inputs, weight))[0]
-    #     actual_output = team['W/L'].iloc[70:81]
+    #     actual_output = team['W/L'].iloc[81]
     #     if (output == 1 and actual_output == 'W') or (output == 0 and actual_output == 'L'):
     #         correct = correct + 1
     #     else:
     #         wrong_teams.append(teams_str[team_num])
     # progress_bar.finish()
 
-    # # --------------------------- Testing Output --------------------------- #
+    # # --------------------------- Testing Output - One Game  -------------------------- #
     # print (str(float(correct)/len(teams_str))[:5])
     # print (wrong_teams)
 
-    
-    
-    # ----------------------------- Training ----------------------------- #
-    # team data
-    new_weights = {}
-    for team_str in teams_str:
-        team = getTeamGames(nba, team_str)
+    # ------------------------------ Testing - Many Games ------------------------------- #
+    widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
+    progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
+    progress_bar.start()
+    correct = 0
+    wrong_teams = []
+    for team_num in range(len(teams_str)):
+        progress_bar.update(team_num)
+        
+        # team data
+        team = getTeamGames(nba, teams_str[team_num])
         team = addDefensiveStats(team)
         team = addStatAverages(team)
-        print('\n', team_str)
 
-        training_inputs = numpy.array(team[input_categories].iloc[10:70].values)
-        training_outputs = numpy.array([team['W/L'].iloc[10:70].values])
+        testing_inputs = numpy.array([team[input_categories].iloc[81].values])
+        weight = weights[weights['team'] == teams_str[team_num]][input_categories].T
+        output = sigmoid(numpy.dot(testing_inputs, weight))[0]
+        actual_output = team['W/L'].iloc[81]
+        if (output == 1 and actual_output == 'W') or (output == 0 and actual_output == 'L'):
+            correct = correct + 1
+        else:
+            wrong_teams.append(teams_str[team_num])
+    progress_bar.finish()
 
-        # translate wins and losses into 1's and 0's 
-        training_outputs[training_outputs == 'W'] = 1
-        training_outputs[training_outputs == 'L'] = 0
-        training_outputs = numpy.array(training_outputs).T
+    # --------------------------- Testing Output - Many Games  -------------------------- #
+    print (str(float(correct)/len(teams_str))[:5])
+    print (wrong_teams)
 
-        numpy.random.seed(1)
-        random_weight = numpy.random.random((len(training_inputs[0]), 1))
-        syn_weights = 2 * random_weight - 1
+    
+    
+    # ---------------------------------- Training  ------------------------------------ #
+    # team data
+    # new_weights = {}
+    # for team_str in teams_str:
+    #     team = getTeamGames(nba, team_str)
+    #     team = addDefensiveStats(team)
+    #     team = addStatAverages(team)
+    #     print('\n', team_str)
 
-        widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
-        range_val = MILLION
+    #     training_inputs = numpy.array(team[input_categories].iloc[10:70].values)
+    #     training_outputs = numpy.array([team['W/L'].iloc[10:70].values])
 
-        team_weights = numpy.array([weights[weights['team'] == team_str].iloc[0].values[1:]]).T
-        new_team_weights = trainTeam(training_inputs, training_outputs, team_weights, acceptable_accuracy=85)
-        new_weights[team_str] = new_team_weights
+    #     # translate wins and losses into 1's and 0's 
+    #     training_outputs[training_outputs == 'W'] = 1
+    #     training_outputs[training_outputs == 'L'] = 0
+    #     training_outputs = numpy.array(training_outputs).T
 
-    new_weights_str = 'team,PTS Avg.,FGM Avg.,FGA Avg.,FG% Avg.,3PM Avg.,3PA Avg.,3P% Avg.,FTM Avg.,FTA Avg.,FT% Avg.,OREB Avg.,DREB Avg.,REB Avg.,AST Avg.,STL Avg.,BLK Avg.,TOV Avg.,PF Avg.,+/- Avg.,Opp. PTS Avg.,Opp. FGM Avg.,Opp. FGA Avg.,Opp. FG% Avg.,Opp. 3PM Avg.,Opp. 3PA Avg.,Opp. 3P% Avg.,Opp. FTM Avg.,Opp. FTA Avg.,Opp. FT% Avg.,Opp. OREB Avg.,Opp. DREB Avg.,Opp. REB Avg.,Opp. AST Avg.,Opp. STL Avg.,Opp. BLK Avg.,Opp. TOV Avg.,Opp. PF Avg.,Opp. +/- Avg.\n'
-    for team_str in teams_str:
-        new_weights_str = new_weights_str + (team_str + ',' + ','.join(map(str, numpy.array(new_weights[team_str]).T[0]))) + '\n'
+    #     numpy.random.seed(1)
+    #     random_weight = numpy.random.random((len(training_inputs[0]), 1))
+    #     syn_weights = 2 * random_weight - 1
 
-    # -------------------------- Training Output --------------------------- #
+    #     widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
+    #     range_val = MILLION
+
+    #     team_weights = numpy.array([weights[weights['team'] == team_str].iloc[0].values[1:]]).T
+    #     new_team_weights = trainTeam(training_inputs, training_outputs, team_weights, acceptable_accuracy=85)
+    #     new_weights[team_str] = new_team_weights
+
+    # new_weights_str = 'team,PTS Avg.,FGM Avg.,FGA Avg.,FG% Avg.,3PM Avg.,3PA Avg.,3P% Avg.,FTM Avg.,FTA Avg.,FT% Avg.,OREB Avg.,DREB Avg.,REB Avg.,AST Avg.,STL Avg.,BLK Avg.,TOV Avg.,PF Avg.,+/- Avg.,Opp. PTS Avg.,Opp. FGM Avg.,Opp. FGA Avg.,Opp. FG% Avg.,Opp. 3PM Avg.,Opp. 3PA Avg.,Opp. 3P% Avg.,Opp. FTM Avg.,Opp. FTA Avg.,Opp. FT% Avg.,Opp. OREB Avg.,Opp. DREB Avg.,Opp. REB Avg.,Opp. AST Avg.,Opp. STL Avg.,Opp. BLK Avg.,Opp. TOV Avg.,Opp. PF Avg.,Opp. +/- Avg.\n'
+    # for team_str in teams_str:
+    #     new_weights_str = new_weights_str + (team_str + ',' + ','.join(map(str, numpy.array(new_weights[team_str]).T[0]))) + '\n'
+
+    # -------------------------------- Training Output -------------------------------- #
     # print('\n', new_weights, '\n\n')
     # print(iterations)
 
     # writes to csv
-    with open('Weights/weights_' + season_years + '.csv', 'w') as filetowrite:
-        filetowrite.write(new_weights_str)
-        filetowrite.close()
+    # with open('Weights/weights_' + season_years + '.csv', 'w') as filetowrite:
+    #     filetowrite.write(new_weights_str)
+    #     filetowrite.close()
 
 # training function
 def trainTeam(training_inputs, training_outputs, weights, acceptable_accuracy=85):

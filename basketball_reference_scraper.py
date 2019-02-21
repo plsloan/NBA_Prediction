@@ -24,7 +24,6 @@ def main():
     for key in temp_dict.keys():
         df[key.upper()] = temp_dict[key]
     df = df.iloc[pandas.to_datetime(df.DATE).values.argsort()]  # sort
-    # df.sort_values(['TEAM', 'DATE'], ascending=[False, True])
     csv_content = df.to_csv(index=False)
     with open('Data/NBA_' + season_years + '_Data.csv', 'w') as filetowrite:
         filetowrite.write(csv_content)
