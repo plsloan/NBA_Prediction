@@ -19,7 +19,7 @@ teams_str     = ['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 
 teams_val     = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  ,   9  ,   10 ,   11 ,   12 ,   13 ,   14 ,   15 ,   16 ,   17 ,   18 ,   19 ,   20 ,   21 ,   22 ,   23 ,   24 ,   25 ,   26 ,   27 ,   28 ,   29 ]
 
 # import datasets
-season_years = '2017-2018'
+season_years = '2018-2019'
 nba = pandas.read_csv('Data/NBA_'+ season_years + '_Data.csv')
 weights = pandas.read_csv('Weights/weights_'+ season_years + '.csv')
 
