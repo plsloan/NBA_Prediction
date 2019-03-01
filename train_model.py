@@ -1,13 +1,10 @@
+import os
 import numpy
 import pandas
 import warnings
-import datetime
-import matplotlib.pyplot as plt
-import basketball_reference_scraper
-# from sklearn.datasets import load_iris
-# from sklearn.neighbors import KNeighborsClassifier
 from progressbar import ProgressBar, Bar, Percentage, ETA, FileTransferSpeed
 
+import basketball_reference_scraper
 warnings.filterwarnings("ignore")
 
 # string translation
@@ -20,7 +17,8 @@ teams_val     = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  , 
 
 # import datasets
 season_years = '2018-2019'
-nba = pandas.read_csv('Data/NBA_'+ season_years + '_Data.csv')
+# nba = pandas.read_csv('Data/NBA_'+ season_years + '_Data.csv')      # local data
+nba = basketball_reference_scraper.main(season_years)               # current data (scraped)
 weights = pandas.read_csv('Weights/weights_'+ season_years + '.csv')
 
 # categories
@@ -33,6 +31,8 @@ MILLION = 10**6
 
 def main():
     # ---------------------------------- Training  ------------------------------------ #
+    print('\n//------------------- Training ------------------\\\\')
+
     # team data
     new_weights = {}
     for team_str in teams_str:
@@ -41,8 +41,8 @@ def main():
         team = addStatAverages(team)
         print('\n', team_str)
 
-        training_inputs = numpy.array(team[input_categories].iloc[10:70].values)
-        training_outputs = numpy.array([team['W/L'].iloc[10:70].values])
+        training_inputs = numpy.array(team[input_categories].values)
+        training_outputs = numpy.array([team['W/L'].values])
 
         # translate wins and losses into 1's and 0's 
         training_outputs[training_outputs == 'W'] = 1
@@ -66,7 +66,12 @@ def main():
 
     # -------------------------------- Training Output -------------------------------- #
     # print('\n', new_weights, '\n\n')
-
+    if '\r\n' in new_weights_str:
+        new_weights_str = new_weights_str.replace('\r\n', '\n')
+    if '\n\n' in new_weights_str:
+        new_weights_str = new_weights_str.replace('\n\n', '\n')
+    if not os.path.exists('Weights/'):
+        os.makedirs('Weights/')
     # writes to csv
     with open('Weights/weights_' + season_years + '.csv', 'w') as filetowrite:
         filetowrite.write(new_weights_str)
@@ -153,7 +158,7 @@ def addStatAverages(data):
                 avgs.append(0)
             for i in range(0, len(new_data[index])-10):
                 i = i + 1
-                avgs.append(data[index].iloc[:10+i].mean())
+                avgs.append(data[index].iloc[:10+i].astype(float).mean())
             new_data[index + ' Avg.'] = avgs
     
     # return copy
@@ -190,7 +195,7 @@ def getAverages(data):
     ignore_categories = ['TEAM', 'DATE', 'MATCHUP', 'W/L', 'MIN']
     for stat in data.keys().tolist():
         if stat not in ignore_categories and stat[-4:] != 'Avg.':
-            results[stat] = data[stat].mean()
+            results[stat] = data[stat].astype(float).mean()
     return results
 def getOpponentData(team, opponent, date, data=nba):
     return(data[data['MATCHUP'].str.contains(team) & data['MATCHUP'].str.contains(opponent) & data['DATE'].str.contains(date) & data['TEAM'].str.contains(opponent)])

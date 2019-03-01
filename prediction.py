@@ -32,35 +32,7 @@ THOUSAND = 10**3
 MILLION = 10**6
 
 def main():
-    # # ------------------------------ Testing - One Game ------------------------------- #
-    # widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
-    # progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
-    # progress_bar.start()
-    # correct = 0
-    # wrong_teams = []
-    # for team_num in range(len(teams_str)):
-    #     progress_bar.update(team_num)
-        
-    #     # team data
-    #     team = getTeamGames(nba, teams_str[team_num])
-    #     team = addDefensiveStats(team)
-    #     team = addStatAverages(team)
-
-    #     testing_inputs = numpy.array([team[input_categories].iloc[81].values])
-    #     weight = weights[weights['team'] == teams_str[team_num]][input_categories].T
-    #     output = sigmoid(numpy.dot(testing_inputs, weight))[0]
-    #     actual_output = team['W/L'].iloc[81]
-    #     if (output == 1 and actual_output == 'W') or (output == 0 and actual_output == 'L'):
-    #         correct = correct + 1
-    #     else:
-    #         wrong_teams.append(teams_str[team_num])
-    # progress_bar.finish()
-
-    # # --------------------------- Testing Output - One Game  -------------------------- #
-    # print (str(float(correct)/len(teams_str))[:5])
-    # print (wrong_teams)
-
-    # ------------------------------ Testing - Many Games ------------------------------- #
+    # ------------------------------ Testing - One Game ------------------------------- #
     widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
     progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
     progress_bar.start()
@@ -74,19 +46,47 @@ def main():
         team = addDefensiveStats(team)
         team = addStatAverages(team)
 
-        testing_inputs = numpy.array([team[input_categories].iloc[70:81].values])
+        testing_inputs = numpy.array([team[input_categories].iloc[81].values])
         weight = weights[weights['team'] == teams_str[team_num]][input_categories].T
-        output = sigmoid(numpy.dot(testing_inputs, weight))
-        actual_output = team['W/L'].iloc[70:81]
+        output = sigmoid(numpy.dot(testing_inputs, weight))[0]
+        actual_output = team['W/L'].iloc[81]
         if (output == 1 and actual_output == 'W') or (output == 0 and actual_output == 'L'):
             correct = correct + 1
         else:
             wrong_teams.append(teams_str[team_num])
     progress_bar.finish()
 
-    # --------------------------- Testing Output - Many Games  -------------------------- #
+    # --------------------------- Testing Output - One Game  -------------------------- #
     print (str(float(correct)/len(teams_str))[:5])
     print (wrong_teams)
+
+    # # ------------------------------ Testing - Many Games ------------------------------- #
+    # widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA()]#, ' ', FileTransferSpeed()]
+    # progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
+    # progress_bar.start()
+    # correct = 0
+    # wrong_teams = []
+    # for team_num in range(len(teams_str)):
+    #     progress_bar.update(team_num)
+        
+    #     # team data
+    #     team = getTeamGames(nba, teams_str[team_num])
+    #     team = addDefensiveStats(team)
+    #     team = addStatAverages(team)
+
+    #     testing_inputs = numpy.array([team[input_categories].iloc[70:81].values])
+    #     weight = weights[weights['team'] == teams_str[team_num]][input_categories].T
+    #     output = sigmoid(numpy.dot(testing_inputs, weight))
+    #     actual_output = team['W/L'].iloc[70:81]
+    #     if (output == 1 and actual_output == 'W') or (output == 0 and actual_output == 'L'):
+    #         correct = correct + 1
+    #     else:
+    #         wrong_teams.append(teams_str[team_num])
+    # progress_bar.finish()
+
+    # # --------------------------- Testing Output - Many Games  -------------------------- #
+    # print (str(float(correct)/len(teams_str))[:5])
+    # print (wrong_teams)
 
 # training function
 def trainTeam(training_inputs, training_outputs, weights, acceptable_accuracy=85):

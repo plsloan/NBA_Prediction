@@ -1,3 +1,4 @@
+import os
 import numpy
 import pandas
 from requests import get
@@ -9,13 +10,12 @@ teams_str   = ['ATL', 'BOS', 'BKN', 'CHA', 'CHI', 'CLE', 'DAL', 'DEN', 'DET', 'G
 teams_val   = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  ,   9  ,   10 ,   11 ,   12 ,   13 ,   14 ,   15 ,   16 ,   17 ,   18 ,   19 ,   20 ,   21 ,   22 ,   23 ,   24 ,   25 ,   26 ,   27 ,   28 ,   29 ]
 games_today = []
 
-def main():
-    print()
-    season_years = '2017-2018'
+def main(season_years):
+    print('\n//------------------- Scraping ------------------\\\\')
     league_stats = {}
     temp_dict = {}
     df = pandas.DataFrame()
-    widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA(), ' ', FileTransferSpeed()]
+    widgets = [Bar(marker='=',left='[',right=']'), ' ', Percentage(), ' ', ETA()]#, ' ', FileTransferSpeed()]
     progress_bar = ProgressBar(widgets=widgets, maxval=len(teams_str))
     progress_bar.start()
     for team_num in teams_val:
@@ -34,11 +34,18 @@ def main():
         df[key.upper()] = temp_dict[key]
     df = df.iloc[pandas.to_datetime(df.DATE).values.argsort()]  # sort
     csv_content = df.to_csv(index=False)
+    if '\r\n' in csv_content:
+        csv_content = csv_content.replace('\r\n', '\n')
+    if '\n\n' in csv_content:
+        csv_content = csv_content.replace('\n\n', '\n')
+    if not os.path.exists('Data/'):
+        os.makedirs('Data/')
     with open('Data/NBA_' + season_years + '_Data.csv', 'w') as filetowrite:
         filetowrite.write(csv_content)
         filetowrite.close()
     print('These teams have games today...')
     print(games_today)
+    return df
 
 def get_season_stats(team_str_fun, year='2018-2019'):
     year = year[-4:]
@@ -266,7 +273,7 @@ def get_opponent_str(opponent):
         return teams_str[29]
 
 if __name__ == '__main__':
-    main()
+    main('2018-2019')
 
 # finds div with 'data-bin' attribute
 # print [tag["data-bin"] for tag in html_soup.find_all('div') if "data-bin" in tag.attrs]
