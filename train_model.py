@@ -17,8 +17,8 @@ teams_val     = [  0  ,   1  ,   2  ,   3  ,   4  ,   5  ,   6  ,   7  ,   8  , 
 
 # import datasets
 season_years = '2018-2019'
-# nba = pandas.read_csv('Data/NBA_'+ season_years + '_Data.csv')      # local data
-nba = basketball_reference_scraper.main(season_years)               # current data (scraped)
+nba = pandas.read_csv('Data/NBA_'+ season_years + '_Data.csv')      # local data
+# nba = basketball_reference_scraper.main(season_years)               # current data (scraped)
 weights = pandas.read_csv('Weights/weights_'+ season_years + '.csv')
 
 # categories
@@ -200,7 +200,7 @@ def getAverages(data):
 def getOpponentData(team, opponent, date, data=nba):
     return(data[data['MATCHUP'].str.contains(team) & data['MATCHUP'].str.contains(opponent) & data['DATE'].str.contains(date) & data['TEAM'].str.contains(opponent)])
 
-#translation
+# translation
 def translateMatchup(matchup, win_loss=None):
     team = teams_str.index(matchup[:3])
     opp  = teams_str.index(matchup[-3:])
